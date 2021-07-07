@@ -5,6 +5,7 @@ Begin VB.UserControl ImageList
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   DrawStyle       =   5  'Transparent
    BeginProperty Font 
       Name            =   "Tahoma"
       Size            =   6.75
@@ -36,15 +37,9 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 #If False Then
-Private ImlImageTypeBitmap, ImlImageTypeIcon, ImlImageTypeCursor
 Private ImlColorDepth4Bit, ImlColorDepth8Bit, ImlColorDepth16Bit, ImlColorDepth24Bit, ImlColorDepth32Bit
 Private ImlDrawNormal, ImlDrawTransparent, ImlDrawSelected, ImlDrawFocus, ImlDrawNoMask
 #End If
-Public Enum ImlImageTypeConstants
-ImlImageTypeBitmap = 0
-ImlImageTypeIcon = 1
-ImlImageTypeCursor = 2
-End Enum
 Public Enum ImlColorDepthConstants
 ImlColorDepth4Bit = &H4
 ImlColorDepth8Bit = &H8
@@ -107,6 +102,7 @@ Private Const BDR_RAISEDOUTER As Long = 1
 Private Const BDR_RAISEDINNER As Long = 4
 Private Const CLR_NONE As Long = -1
 Private Const CLR_DEFAULT As Long = -16777216
+Implements OLEGuids.IObjectSafety
 Private ImageListHandle As Long
 Private ImageListInitListImagesCount As Long
 Private ImageListDesignMode As Boolean
@@ -120,12 +116,23 @@ Private PropMaskColor As OLE_COLOR
 Private PropUseBackColor As Boolean
 Private PropBackColor As OLE_COLOR
 
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
+
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 End Sub
 
 Private Sub UserControl_InitProperties()
+On Error Resume Next
 ImageListDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 PropImageWidth = 0
 PropImageHeight = 0
 PropColorDepth = ImlColorDepth24Bit
@@ -138,7 +145,9 @@ Call CreateImageList
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
+On Error Resume Next
 ImageListDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropImageWidth = .ReadProperty("ImageWidth", 0)
 PropImageHeight = .ReadProperty("ImageHeight", 0)
@@ -529,8 +538,10 @@ Public Property Get SystemColorDepth() As ImlColorDepthConstants
 Attribute SystemColorDepth.VB_Description = "Returns the system color depth."
 Dim hDC As Long
 hDC = CreateDCAsNull(StrPtr("DISPLAY"), ByVal 0&, ByVal 0&, ByVal 0&)
-SystemColorDepth = GetDeviceCaps(hDC, BITSPIXEL)
-DeleteDC hDC
+If hDC <> 0 Then
+    SystemColorDepth = GetDeviceCaps(hDC, BITSPIXEL)
+    DeleteDC hDC
+End If
 End Property
 
 Public Function Overlay(ByVal Index1 As Variant, ByVal Index2 As Variant) As IPictureDisp

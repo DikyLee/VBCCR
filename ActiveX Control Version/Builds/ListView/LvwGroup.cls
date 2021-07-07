@@ -40,6 +40,10 @@ Attribute Key.VB_Description = "Returns the key used in the collection."
 Key = PropKey
 End Property
 
+Public Property Let Key(ByVal Value As String)
+ShadowListView.Groups.FChangeKey PropIndex, PropKey, Value
+End Property
+
 Public Property Get Tag() As Variant
 Attribute Tag.VB_Description = "Stores any extra data needed for your program."
 If IsEmpty(PropTag) Then
@@ -111,7 +115,7 @@ End Property
 
 Public Property Get Hint() As String
 Attribute Hint.VB_Description = "Returns/sets the text displayed as a hint below the header for the group. Requires comctl32.dll version 6.1 or higher."
-Hint = ShadowListView.FGroupLink(PropID)
+Hint = ShadowListView.FGroupHint(PropID)
 End Property
 
 Public Property Let Hint(ByVal Value As String)
