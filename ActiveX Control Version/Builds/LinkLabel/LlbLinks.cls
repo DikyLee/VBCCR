@@ -12,10 +12,22 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
-Private ShadowObjectPointer As Long
+#If (VBA7 = 0) Then
+Private Enum LongPtr
+[_]
+End Enum
+#End If
+#If Win64 Then
+Private Const NULL_PTR As LongPtr = 0
+Private Const PTR_SIZE As Long = 8
+#Else
+Private Const NULL_PTR As Long = 0
+Private Const PTR_SIZE As Long = 4
+#End If
+Private ShadowObjectPointer As LongPtr
 
 Private Function ShadowLinkLabel() As LinkLabel
-ComCtlsPtrToShadowObj ShadowLinkLabel, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowLinkLabel, ShadowObjectPointer
 End Function
 
 Public Function NewEnum() As IEnumVARIANT
@@ -32,9 +44,8 @@ Public Property Get Item(ByVal Index As Long) As LlbLink
 Attribute Item.VB_Description = "Returns a link given its index."
 Attribute Item.VB_UserMemId = 0
 If Index > Me.Count Or Index <= 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
-Dim NewLink As New LlbLink
-NewLink.FInit ShadowObjectPointer, Index
-Set Item = NewLink
+Set Item = New LlbLink
+Item.FInit ShadowObjectPointer, Index
 End Property
 
 Public Function Exists(ByVal Index As Long) As Boolean
